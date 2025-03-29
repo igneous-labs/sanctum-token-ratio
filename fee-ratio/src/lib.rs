@@ -6,17 +6,18 @@ use core::{
     ops::RangeInclusive,
 };
 
-// Re-export
+/// Re-export of [`sanctum_token_ratio`]
 pub mod ratio {
     pub use sanctum_token_ratio::*;
 }
 
-mod amts_after_fee;
+mod aft_bef_fee;
 
-pub use amts_after_fee::*;
+pub use aft_bef_fee::*;
 
 use ratio::*;
 
+/// A fee applied as a ratio <1.0
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Fee<D>(pub D);
@@ -43,12 +44,12 @@ macro_rules! impl_fee_ratio {
             /// # Params
             /// - `amount`: the token amount before fees
             #[inline]
-            pub const fn apply(&self, amount: u64) -> Option<AfterFee> {
+            pub const fn apply(&self, amount: u64) -> Option<AftFee> {
                 let fee = match self.0.apply(amount) {
                     None => return None,
                     Some(f) => f,
                 };
-                AfterFeeBuilder::new(amount).with_fee(fee)
+                BefFee(amount).with_fee(fee)
             }
 
             /// # Params
@@ -104,12 +105,12 @@ macro_rules! impl_fee_ratio {
             /// # Params
             /// - `amount`: the token amount before fees
             #[inline]
-            pub const fn apply(&self, amount: u64) -> Option<AfterFee> {
+            pub const fn apply(&self, amount: u64) -> Option<AftFee> {
                 let fee = match self.0.apply(amount) {
                     None => return None,
                     Some(f) => f,
                 };
-                AfterFeeBuilder::new(amount).with_fee(fee)
+                BefFee(amount).with_fee(fee)
             }
 
             /// # Params
