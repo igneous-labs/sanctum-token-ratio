@@ -1,4 +1,5 @@
 #![cfg_attr(not(test), no_std)]
+#![doc = include_str!("../README.md")]
 
 use core::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use core::fmt::{Display, Formatter};

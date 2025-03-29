@@ -4,6 +4,7 @@ edition.workspace = true
 version.workspace = true
 license-file.workspace = true
 repository.workspace = true
+description = "A library for applying ratios to u64 quantities."
 
 [dependencies]
 

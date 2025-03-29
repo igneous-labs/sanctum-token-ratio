@@ -239,6 +239,15 @@ mod tests {
                         *rt.end() - amt <= 1,
                         "gte one rt {} {:?}", amt, rt,
                     );
+                    // make sure that applying the ratio again
+                    // yields the same result
+                    let app_min = gte.apply(*rt.start()).unwrap();
+                    let app_max = gte.apply(*rt.end()).unwrap();
+                    prop_assert!(
+                        app == app_min &&
+                        app == app_max,
+                        "gte one rt {} {:?}", amt, rt,
+                    );
 
                     // gte overflow
                     if amt_max < u64::MAX {
@@ -259,13 +268,13 @@ mod tests {
                     // well-bounded like gte one
                     prop_assert!(*rt.start() <= amt);
                     prop_assert!(amt <= *rt.end());
-                    // but make sure that applying the ratio again yields result that
-                    // differ at most by 1 in the correct direction
+                    // but make sure that applying the ratio again
+                    // yields the same result
                     let app_min = lte.apply(*rt.start()).unwrap();
                     let app_max = lte.apply(*rt.end()).unwrap();
                     prop_assert!(
-                        app - app_min <= 1 &&
-                        app_max - app <= 1,
+                        app == app_min &&
+                        app == app_max,
                         "lte one rt {} {:?}", amt, rt,
                     );
 

@@ -9,4 +9,4 @@ See individual crates for more docs.
 
 ## MSRV
 
-`rustc 1.79.0`, same vers as that used in `cargo-build-sbf v2` 
+`rustc 1.79.0`, same vers as that used in `cargo-build-sbf v2`
