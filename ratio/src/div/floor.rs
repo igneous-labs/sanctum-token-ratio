@@ -242,6 +242,17 @@ mod tests {
                         app == app_max,
                         "gte one rt {} {:?}", amt, rt,
                     );
+                    // smaller valid reversal not in range should not exist
+                    if *rt.start() > 0 {
+                        let app_smaller = gte.apply(*rt.start() - 1).unwrap();
+                        prop_assert!(app != app_smaller);
+                    }
+                    // larger valid reversal not in range should not exist
+                    if *rt.end() < u64::MAX {
+                        if let Some(app_larger) = gte.apply(*rt.end() + 1) {
+                            prop_assert!(app != app_larger);
+                        }
+                    }
 
                     // gte overflow
                     if amt_max < u64::MAX {
@@ -273,6 +284,16 @@ mod tests {
                         app == app_max,
                         "lte one rt {} {:?}", amt, rt,
                     );
+                    // smaller valid reversal not in range should not exist
+                    if *rt.start() > 0 {
+                        let app_smaller = lte.apply(*rt.start() - 1).unwrap();
+                        prop_assert!(app != app_smaller);
+                    }
+                    // larger valid reversal not in range should not exist
+                    if *rt.end() < u64::MAX {
+                        let app_larger = lte.apply(*rt.end() + 1).unwrap();
+                        prop_assert!(app != app_larger);
+                    }
 
                     // lte overflow
                     if aaf_max < u64::MAX {
