@@ -10,6 +10,7 @@ mod floor;
 pub(crate) mod utils;
 
 pub use ceil::*;
+pub use floor::*;
 
 /// A ratio that is applied to a u64 token amount.
 ///

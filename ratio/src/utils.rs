@@ -1,5 +1,5 @@
 #[inline]
-pub(crate) const fn trunc_u128_to_u64(x: u128) -> Option<u64> {
+pub(crate) const fn u128_to_u64_checked(x: u128) -> Option<u64> {
     if x > u64::MAX as u128 {
         None
     } else {

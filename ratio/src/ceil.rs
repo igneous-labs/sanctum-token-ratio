@@ -3,13 +3,14 @@ use core::{
     ops::RangeInclusive,
 };
 
-use crate::{utils::trunc_u128_to_u64, Ratio};
+use crate::{utils::u128_to_u64_checked, Ratio};
 
 /// A ratio `(n/d)` ceiling-applied to a u64 `x`. Output = `ceil(xn/d)`
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct CeilDiv<R>(pub R);
 
+/// Displayed as `CeilDiv({{self.0})`
 impl<R: Display> Display for CeilDiv<R> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.write_fmt(format_args!("CeilDiv({})", self.0))
@@ -27,11 +28,13 @@ impl<R> CeilDiv<R> {
 macro_rules! impl_ceil_div {
     ($N:ty, $D:ty) => {
         impl CeilDiv<Ratio<$N, $D>> {
-            /// Returns ceil(amt * num / denom)
+            /// # Returns
             ///
-            /// Returns 0 if denominator == 0
+            /// `ceil(amt * self.0.n / self.0.d)`
             ///
-            /// Returns None if overflow
+            /// ## Special Case Returns
+            /// - `0` if `self.0.is_zero()`
+            /// - `None` if `result > u64::MAX`
             #[inline]
             pub const fn apply(&self, amount: u64) -> Option<u64> {
                 if self.0.is_zero() {
@@ -46,24 +49,28 @@ macro_rules! impl_ceil_div {
                 let xn = x * n;
                 // unchecked-arith: ratio is not 0 so d != 0
                 let res = xn.div_ceil(d);
-                trunc_u128_to_u64(res)
+                u128_to_u64_checked(res)
             }
 
-            /// Returns the range of possible values that were fed into `self.apply()`
-            /// to get output `amt_after_apply`
-            ///
             /// # Returns
-            /// - `0..=u64::MAX` if `self.0.d == 0 || self.0.n == 0` and `amt_after_apply == 0`
-            /// - min rounds up if `dy` is not divisible by `n`
-            ///     - Example: if the actual range has `min = 14.6`, then the range returned will be `15..=xx`
-            /// - max rounds down if `dy` is not divisible by `n`.
-            ///     - Example: if the actual range has `max = 14.6`, then the range returned will be `xx..=14`
+            ///
+            /// `min..=max` the range of possible values that were fed into `self.apply()`
+            /// to get output `amt_after_apply`.
+            ///
+            /// `min` and `max` are saturated at `0` and `u64::MAX`.
+            ///
+            /// `min` rounds up.
+            /// - Example: if the actual range has `min = 14.6`, then the range returned will be `15..=xx`
+            ///
+            /// `max` rounds down.
+            /// - Example: if the actual range has `max = 14.6`, then the range returned will be `xx..=14`
+            ///
+            /// ## Special Case Returns
+            ///
+            /// - `0..=u64::MAX` if `self.0.is_zero()` and `amt_after_apply == 0`
             /// - `0..=0` if `amt_after_apply == 0` and ratio is nonzero
-            ///
-            /// Range outputs are capped to u64 range (saturating_add/sub)
-            ///
-            /// Returns `None`
-            /// - if `denom == 0 || num == 0` but `amt_after_apply != 0`
+            /// - `None` if `self.0.is_zero()` but `amt_after_apply != 0`
+            /// - `None` if `min > u64::MAX`
             ///
             /// # Derivation
             ///
@@ -73,15 +80,15 @@ macro_rules! impl_ceil_div {
             /// n = numerator
             /// d = denominator
             ///
-            /// y = ceil(nx / d)
-            /// y-1 < nx / d <= y
+            /// y = ceil(xn / d)
+            /// y-1 < xn / d <= y
             ///
             /// LHS (min):
-            /// dy-d < nx
+            /// dy-d < xn
             /// (dy-d) / n < x
             ///
             /// RHS (max):
-            /// nx <= dy
+            /// xn <= dy
             /// x <= dy / n
             /// ```
             #[inline]
@@ -111,16 +118,22 @@ macro_rules! impl_ceil_div {
                 let dy_minus_d = dy - d;
                 // unchecked-arith: ratio is not 0 so n != 0
                 let min = dy_minus_d.div_ceil(n);
-                let min = match trunc_u128_to_u64(min) {
+                let rem = dy_minus_d % n;
+                let min = if rem == 0 {
+                    // range-exclusive, so must +1
+                    // unchecked-arith: (dy - d) < u128::MAX
+                    min + 1
+                } else {
+                    min
+                };
+                let min = match u128_to_u64_checked(min) {
                     None => return None,
                     Some(r) => r,
                 };
 
-                // unchecked-arith: even if d = y = u64::MAX, does not overflow u128
-                let dy_plus_d = dy + d;
                 // unchecked-arith: ratio is not 0 so n != 0
-                let max = dy_plus_d / n;
-                let max = match trunc_u128_to_u64(max) {
+                let max = dy / n;
+                let max = match u128_to_u64_checked(max) {
                     // saturation
                     None => u64::MAX,
                     Some(r) => r,
@@ -156,8 +169,6 @@ impl_ceil_div!(u64, u64);
 mod tests {
     use proptest::prelude::*;
 
-    use crate::Ratio;
-
     use super::*;
 
     macro_rules! test_suite {
@@ -172,7 +183,7 @@ mod tests {
                     fn prop_ratio_gte_one_and_overflow_max_limit()
                         (ratio in <Ratio<$N, $D>>::prop_gte_one())-> (u64, Self) {
                             // let x be max limit
-                            // ceil(xn/d) <= u64::MAX
+                            // ceil(xn/d) = u64::MAX
                             // xn/d <= u64::MAX
                             // x <= u64::MAX * d / n
                             let max_limit = u64::MAX as u128 * ratio.d as u128 / ratio.n as u128;
