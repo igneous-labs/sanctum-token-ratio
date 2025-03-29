@@ -12,6 +12,7 @@ pub struct FloorDiv<R>(pub R);
 
 /// Displayed as `FloorDiv({{self.0})`
 impl<R: Display> Display for FloorDiv<R> {
+    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.write_fmt(format_args!("FloorDiv({})", self.0))
     }

@@ -12,6 +12,7 @@ pub struct CeilDiv<R>(pub R);
 
 /// Displayed as `CeilDiv({{self.0})`
 impl<R: Display> Display for CeilDiv<R> {
+    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.write_fmt(format_args!("CeilDiv({})", self.0))
     }

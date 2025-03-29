@@ -14,7 +14,7 @@ pub use floor::*;
 
 /// A ratio that is applied to a u64 token amount.
 ///
-/// A zero denominator ratio (`self.d == 0`) is treated as the zero ratio.
+/// A zero denominator ratio (`self.d == 0`) is treated as zero.
 ///
 /// Must use with [`crate::CeilDiv`] or [`crate::FloorDiv`]
 /// for application on [`u64`]s
