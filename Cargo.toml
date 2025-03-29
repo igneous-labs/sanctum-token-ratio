@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "ratio"
+]
+
+
+[workspace.package]
+edition = "2021"
+version = "1.0.0"
+license-file = "LICENSE"
+repository = "https://github.com/igneous-labs/sanctum-token-ratio"
+
+[workspace.dependencies]
+proptest = { version = "^1", default-features = false }
+
+# workspace members
+sanctum-token-ratio = { path = "./ratio" }

@@ -1,0 +1,11 @@
+[package]
+name = "sanctum-token-ratio"
+edition.workspace = true
+version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+proptest = { workspace = true, features = ["std"] }
