@@ -4,13 +4,11 @@ use core::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use core::fmt::{Display, Formatter};
 use core::hash::{Hash, Hasher};
 
-mod ceil;
-mod floor;
+mod div;
 
 pub(crate) mod utils;
 
-pub use ceil::*;
-pub use floor::*;
+pub use div::*;
 
 /// A ratio that is applied to a u64 token amount.
 ///
