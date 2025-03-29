@@ -1,0 +1,13 @@
+[package]
+name = "sanctum-fee-ratio"
+edition.workspace = true
+version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+description = "Abstractions over fees applied as ratios to u64 quantities."
+
+[dependencies]
+sanctum-token-ratio = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true, features = ["std"] }

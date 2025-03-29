@@ -8,17 +8,17 @@ use crate::{utils::u128_to_u64_checked, Ratio};
 /// A ratio `(n/d)` ceiling-applied to a u64 `x`. Output = `ceil(xn/d)`
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct CeilDiv<R>(pub R);
+pub struct Ceil<R>(pub R);
 
-/// Displayed as `CeilDiv({{self.0})`
-impl<R: Display> Display for CeilDiv<R> {
+/// Displayed as `Ceil({{self.0})`
+impl<R: Display> Display for Ceil<R> {
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        f.write_fmt(format_args!("CeilDiv({})", self.0))
+        f.write_fmt(format_args!("Ceil({})", self.0))
     }
 }
 
-impl<R> CeilDiv<R> {
+impl<R> Ceil<R> {
     /// Convenience constructor for better compatibility with type aliases
     #[inline]
     pub const fn new(r: R) -> Self {
@@ -28,7 +28,7 @@ impl<R> CeilDiv<R> {
 
 macro_rules! impl_ceil_div {
     ($N:ty, $D:ty) => {
-        impl CeilDiv<Ratio<$N, $D>> {
+        impl Ceil<Ratio<$N, $D>> {
             /// # Returns
             ///
             /// `ceil(amt * self.0.n / self.0.d)`
@@ -178,7 +178,7 @@ mod tests {
             $nonzero_tests:ident,
             $zero_tests:ident
         ) => {
-            impl CeilDiv<Ratio<$N, $D>> {
+            impl Ceil<Ratio<$N, $D>> {
                 prop_compose! {
                     /// max_limit is the max number that ratio can be applied to without overflowing u64
                     pub(crate) fn prop_ratio_gte_one_and_overflow_max_limit()
@@ -226,8 +226,8 @@ mod tests {
             proptest! {
                 #[test]
                 fn $nonzero_tests(
-                    (amt, amt_max, gte) in CeilDiv::<Ratio<$N, $D>>::prop_ratio_gte_one_amt_no_overflow(),
-                    (_aaf, aaf_max, lte) in CeilDiv::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
+                    (amt, amt_max, gte) in Ceil::<Ratio<$N, $D>>::prop_ratio_gte_one_amt_no_overflow(),
+                    (_aaf, aaf_max, lte) in Ceil::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
                     any_u64: u64,
                 ) {
                     // gte one round trip
@@ -316,7 +316,7 @@ mod tests {
                     zer in <Ratio<$N, $D>>::prop_zero(),
                     amt: u64,
                 ) {
-                    let zer = CeilDiv(zer);
+                    let zer = Ceil(zer);
                     prop_assert_eq!(zer.apply(amt).unwrap(), 0);
                     if amt != 0 {
                         prop_assert!(zer.reverse(amt).is_none());
