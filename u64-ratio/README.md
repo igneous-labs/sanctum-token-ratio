@@ -1,4 +1,4 @@
-# sanctum-token-ratio
+# sanctum-u64-ratio
 
 A library for applying ratios to `u64` quantities.
 
