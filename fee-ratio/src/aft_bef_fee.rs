@@ -69,3 +69,49 @@ impl BefFee {
         Some(AftFee { rem, fee })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use proptest::prelude::*;
+
+    use super::*;
+
+    prop_compose! {
+        fn cap_sample_out_of_range()
+            (cap in any::<u64>())
+            (
+                sample in 0..=cap,
+                out_of_range in cap.saturating_add(1)..=u64::MAX,
+                cap in Just(cap)
+            ) -> (u64, u64, Option<u64>) {
+                (cap, sample, (cap != u64::MAX).then_some(out_of_range))
+            }
+    }
+
+    proptest! {
+        #[test]
+        fn aft_bef_fee_invariant(
+            (bef_fee, sample, _oor) in cap_sample_out_of_range()
+        ) {
+            let bef = BefFee(bef_fee);
+            for a in [bef.with_fee(sample).unwrap(), bef.with_rem(sample).unwrap()] {
+                prop_assert_eq!(a.fee() + a.rem(), a.bef_fee());
+                prop_assert_eq!(a.bef_fee(), bef_fee);
+            }
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn out_of_range_none(
+            (bef_fee, _sample, oor) in cap_sample_out_of_range()
+        ) {
+            let bef = BefFee(bef_fee);
+            if let Some(oor) = oor {
+                for opt in [bef.with_fee(oor), bef.with_rem(oor)] {
+                    prop_assert!(opt.is_none());
+                }
+            }
+        }
+    }
+}
