@@ -20,15 +20,16 @@ mod tests {
             proptest! {
                 #[test]
                 fn $test(
-                    (amt, _amt_max, gte) in CeilDiv::<Ratio<$N, $D>>::prop_ratio_gte_one_amt_no_overflow(),
-                    (aaf, _aaf_max, lte) in FloorDiv::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
+                    (amt, _amt_max, gte) in Ceil::<Ratio<$N, $D>>::prop_ratio_gte_one_amt_no_overflow(),
+                    (aaf, _aaf_max, lte) in Floor::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
                     any_u64: u64,
                 ) {
                     let gte_ceil = gte;
-                    let gte_floor = FloorDiv(gte_ceil.0);
+                    let gte_floor = Floor(gte_ceil.0);
                     let lte_floor = lte;
-                    let lte_ceil = CeilDiv(lte_floor.0);
+                    let lte_ceil = Ceil(lte_floor.0);
 
+                    // ceil should be at most floor + 1
                     for (amt, ceil, floor) in [
                         (amt, gte_ceil, gte_floor),
                         (any_u64, lte_ceil, lte_floor),
@@ -36,12 +37,13 @@ mod tests {
                         let app_ceil = ceil.apply(amt).unwrap();
                         let app_floor = floor.apply(amt).unwrap();
                         prop_assert!(
-                            app_ceil >= app_floor,
+                            app_ceil - app_floor <= 1,
                             "floor > ceil {}. {} {} | {} {}",
                             amt, ceil, app_ceil, floor, app_floor,
                         );
                     }
 
+                    // reverse ceiling should be <= reverse floor
                     for (aaf, ceil, floor) in [
                         (aaf, lte_ceil, lte_floor),
                         (any_u64, gte_ceil, gte_floor),

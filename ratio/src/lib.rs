@@ -15,7 +15,7 @@ pub use div::*;
 ///
 /// A zero denominator ratio (`self.d == 0`) is treated as zero.
 ///
-/// Must use with [`crate::CeilDiv`] or [`crate::FloorDiv`]
+/// Must use with [`crate::Ceil`] or [`crate::Floor`]
 /// for application on [`u64`]s
 #[derive(Debug, Copy, Clone)]
 pub struct Ratio<N, D> {

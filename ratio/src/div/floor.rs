@@ -8,17 +8,17 @@ use crate::{utils::u128_to_u64_checked, Ratio};
 /// A ratio `(n/d)` floor-applied to a u64 `x`. Output = `floor(xn/d)`
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct FloorDiv<R>(pub R);
+pub struct Floor<R>(pub R);
 
-/// Displayed as `FloorDiv({{self.0})`
-impl<R: Display> Display for FloorDiv<R> {
+/// Displayed as `Floor({{self.0})`
+impl<R: Display> Display for Floor<R> {
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        f.write_fmt(format_args!("FloorDiv({})", self.0))
+        f.write_fmt(format_args!("Floor({})", self.0))
     }
 }
 
-impl<R> FloorDiv<R> {
+impl<R> Floor<R> {
     /// Convenience constructor for better compatibility with type aliases
     #[inline]
     pub const fn new(r: R) -> Self {
@@ -28,7 +28,7 @@ impl<R> FloorDiv<R> {
 
 macro_rules! impl_floor_div {
     ($N:ty, $D:ty) => {
-        impl FloorDiv<Ratio<$N, $D>> {
+        impl Floor<Ratio<$N, $D>> {
             /// # Returns
             ///
             /// `floor(amt * self.0.n / self.0.d)`
@@ -172,7 +172,7 @@ mod tests {
             $nonzero_tests:ident,
             $zero_tests:ident
         ) => {
-            impl FloorDiv<Ratio<$N, $D>> {
+            impl Floor<Ratio<$N, $D>> {
                 prop_compose! {
                     /// max_limit is the max number that ratio can be applied to without overflowing u64
                     pub(crate) fn prop_ratio_gte_one_and_overflow_max_limit()
@@ -220,8 +220,8 @@ mod tests {
             proptest! {
                 #[test]
                 fn $nonzero_tests(
-                    (amt, amt_max, gte) in FloorDiv::<Ratio<$N, $D>>::prop_ratio_gte_one_amt_no_overflow(),
-                    (_aaf, aaf_max, lte) in FloorDiv::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
+                    (amt, amt_max, gte) in Floor::<Ratio<$N, $D>>::prop_ratio_gte_one_amt_no_overflow(),
+                    (_aaf, aaf_max, lte) in Floor::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
                     any_u64: u64,
                 ) {
                     // gte one round trip
@@ -308,7 +308,7 @@ mod tests {
                     zer in <Ratio<$N, $D>>::prop_zero(),
                     amt: u64,
                 ) {
-                    let zer = FloorDiv(zer);
+                    let zer = Floor(zer);
                     prop_assert_eq!(zer.apply(amt).unwrap(), 0);
                     if amt != 0 {
                         prop_assert!(zer.reverse(amt).is_none());

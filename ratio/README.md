@@ -11,15 +11,15 @@ Token amounts on Solana are most commonly `u64`s. A very common operation is app
 ### Ratio Application
 
 ```rust
-use sanctum_token_ratio::{Ratio, CeilDiv, FloorDiv};
+use sanctum_token_ratio::{Ratio, Ceil, Floor};
 
 let ratio: Ratio<u8, u16> = Ratio {
     n: 1,
     d: 10_000
 };
 
-assert_eq!(FloorDiv(ratio).apply(10_001), Some(1));
-assert_eq!(CeilDiv(ratio).apply(10_001), Some(2));
+assert_eq!(Floor(ratio).apply(10_001), Some(1));
+assert_eq!(Ceil(ratio).apply(10_001), Some(2));
 ```
 
 ### Ratio Reversal
@@ -31,20 +31,20 @@ The ranges are inclusive, so any number in the returned range should result in t
 However, the range might not be complete due to integer rounding. There may exist decimal numbers not in the range that will also result in the same `.apply()` result.
 
 ```rust
-use sanctum_token_ratio::{Ratio, CeilDiv, FloorDiv};
+use sanctum_token_ratio::{Ratio, Ceil, Floor};
 
 let ratio: Ratio<u8, u16> = Ratio {
     n: 1,
     d: 10_000
 };
 
-let floor = FloorDiv(ratio);
+let floor = Floor(ratio);
 let floor_range = floor.reverse(1);
 assert_eq!(floor_range, Some(10_000..=19_999));
 assert_eq!(floor.apply(10_000), Some(1));
 assert_eq!(floor.apply(19_999), Some(1));
 
-let ceil = CeilDiv(ratio);
+let ceil = Ceil(ratio);
 let ceil_range = ceil.reverse(2);
 assert_eq!(ceil_range, Some(10_001..=20_000));
 assert_eq!(ceil.apply(10_001), Some(2));
