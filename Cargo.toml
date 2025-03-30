@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "fee-ratio",
-    "ratio"
+    "u64-ratio"
 ]
 
 
@@ -16,4 +16,4 @@ repository = "https://github.com/igneous-labs/sanctum-token-ratio"
 proptest = { version = "^1", default-features = false }
 
 # workspace members
-sanctum-token-ratio = { path = "./ratio" }
+sanctum-u64-ratio = { path = "./u64-ratio" }

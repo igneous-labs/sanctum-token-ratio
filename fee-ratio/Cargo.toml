@@ -7,7 +7,7 @@ repository.workspace = true
 description = "Abstractions over fees applied as ratios to u64 quantities."
 
 [dependencies]
-sanctum-token-ratio = { workspace = true }
+sanctum-u64-ratio = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true, features = ["std"] }
