@@ -28,7 +28,7 @@ You can also reverse ratios, which returns the range of possible values that wer
 
 The ranges are inclusive, so any number in the returned range should result in the same value if you feed it into `.apply()` again.
 
-However, the range might not be complete due to integer rounding. There may exist decimal numbers not in the range that will also result in the same `.apply()` result.
+While the range is complete for the domain of `u64`s, there may exist decimal numbers not in the range that will also result in the same `.apply()` result.
 
 ```rust
 use sanctum_u64_ratio::{Ratio, Ceil, Floor};

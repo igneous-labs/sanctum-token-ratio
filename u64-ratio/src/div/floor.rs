@@ -117,14 +117,25 @@ macro_rules! impl_floor_div {
                     Some(r) => r,
                 };
 
-                // unchecked-arith: even if d = y = u64::MAX, does not overflow u128
+                // unchecked-arith: even if d = y = u64::MAX,
+                // does not overflow u128
+                // (2^64 - 1)^2 + 2^64 - 1
+                // = 2^128 - 2^65 + 1 + 2^64 - 1
+                // = 2^128 - 2^64(2 - 1)
+                // = 2^128 - 2^64
+                // < 2^128 - 1
+                // = u128::MAX
                 let dy_plus_d = dy + d;
                 // unchecked-arith: ratio is not 0 so n != 0
                 let max = dy_plus_d / n;
                 let rem = dy_plus_d % n;
                 let max = if rem == 0 {
                     // range-exclusive, so must - 1
-                    max.saturating_sub(1)
+                    //
+                    // unchecked-arith: if rem == 0
+                    // then max must be >0 since its
+                    // a non-zero multiple of n
+                    max - 1
                 } else {
                     max
                 };
