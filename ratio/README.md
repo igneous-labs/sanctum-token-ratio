@@ -11,7 +11,7 @@ Token amounts on Solana are most commonly `u64`s. A very common operation is app
 ### Ratio Application
 
 ```rust
-use sanctum_token_ratio::{Ratio, Ceil, Floor};
+use sanctum_u64_ratio::{Ratio, Ceil, Floor};
 
 let ratio: Ratio<u8, u16> = Ratio {
     n: 1,
@@ -31,7 +31,7 @@ The ranges are inclusive, so any number in the returned range should result in t
 However, the range might not be complete due to integer rounding. There may exist decimal numbers not in the range that will also result in the same `.apply()` result.
 
 ```rust
-use sanctum_token_ratio::{Ratio, Ceil, Floor};
+use sanctum_u64_ratio::{Ratio, Ceil, Floor};
 
 let ratio: Ratio<u8, u16> = Ratio {
     n: 1,

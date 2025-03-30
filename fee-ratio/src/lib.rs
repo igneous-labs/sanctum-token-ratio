@@ -7,9 +7,9 @@ use core::{
     ops::RangeInclusive,
 };
 
-/// Re-export of [`sanctum_token_ratio`]
+/// Re-export of [`sanctum_u64_ratio`]
 pub mod ratio {
-    pub use sanctum_token_ratio::*;
+    pub use sanctum_u64_ratio::*;
 }
 
 mod aft_bef_fee;

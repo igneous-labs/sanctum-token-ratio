@@ -1,5 +1,5 @@
 [package]
-name = "sanctum-token-ratio"
+name = "sanctum-u64-ratio"
 edition.workspace = true
 version.workspace = true
 license-file.workspace = true

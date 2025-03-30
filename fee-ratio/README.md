@@ -34,7 +34,7 @@ assert_eq!(aft_fee.bef_fee(), bef_fee);
 
 ### Fee Reversal
 
-Uses [`sanctum_token_ratio`]'s `reverse()` functionality to obtain a range of amount before fees from quantities after fees.
+Uses [`sanctum_u64_ratio`]'s `reverse()` functionality to obtain a range of amount before fees from quantities after fees.
 
 #### From `rem`
 
