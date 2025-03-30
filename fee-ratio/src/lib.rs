@@ -18,7 +18,7 @@ pub use aft_bef_fee::*;
 
 use ratio::*;
 
-/// A fee applied as a ratio <=1.0
+/// A fee applied as a ratio to an amount
 ///
 /// Invariant: encapsulated ratio is `<= 1.0`
 ///
@@ -67,7 +67,7 @@ macro_rules! impl_fee_ratio {
     ($N:ty, $D:ty) => {
         impl Fee<Ceil<Ratio<$N, $D>>> {
             /// # Returns
-            /// `None` if `fee_ratio` is not valid (>1.0)
+            /// `None` if `fee_ratio` is not valid (`>1.0`)
             #[inline]
             pub const fn new(fee_ratio: Ratio<$N, $D>) -> Option<Self> {
                 if !fee_ratio.is_zero()
@@ -78,6 +78,13 @@ macro_rules! impl_fee_ratio {
                 } else {
                     Some(Self(Ceil(fee_ratio)))
                 }
+            }
+
+            /// # Safety
+            /// - `fee_ratio` must be valid (`<= 1.0`)
+            #[inline]
+            pub const unsafe fn new_unchecked(fee_ratio: Ratio<$N, $D>) -> Self {
+                Self(Ceil(fee_ratio))
             }
 
             /// # Params
@@ -149,7 +156,7 @@ macro_rules! impl_fee_ratio {
 
         impl Fee<Floor<Ratio<$N, $D>>> {
             /// # Returns
-            /// `None` if `fee_ratio` is not valid (>1.0)
+            /// `None` if `fee_ratio` is not valid (`>1.0`)
             #[inline]
             pub const fn new(fee_ratio: Ratio<$N, $D>) -> Option<Self> {
                 if !fee_ratio.is_zero()
@@ -160,6 +167,13 @@ macro_rules! impl_fee_ratio {
                 } else {
                     Some(Self(Floor(fee_ratio)))
                 }
+            }
+
+            /// # Safety
+            /// - `fee_ratio` must be valid (`<= 1.0`)
+            #[inline]
+            pub const unsafe fn new_unchecked(fee_ratio: Ratio<$N, $D>) -> Self {
+                Self(Floor(fee_ratio))
             }
 
             /// # Params
@@ -205,7 +219,7 @@ macro_rules! impl_fee_ratio {
             }
 
             /// # Returns
-            /// `1.0` - self's ratio, else `None` if self's ratio is `>1.0` and is hence not a valid fee
+            /// `1.0` - self's ratio
             #[inline]
             pub const fn one_minus_fee_ratio(
                 &self,
@@ -289,6 +303,7 @@ mod tests {
                 ) {
                     // FLOOR TESTS
                     let floor_aaf = floor.apply(bef).unwrap();
+                    prop_assert_eq!(floor_aaf.bef_fee(), bef);
                     // boundary cases
                     if floor.0.0.is_zero() {
                         prop_assert_eq!(floor_aaf.rem(), bef);
@@ -345,6 +360,7 @@ mod tests {
 
                     // CEIL TESTS
                     let ceil_aaf = ceil.apply(bef).unwrap();
+                    prop_assert_eq!(ceil_aaf.bef_fee(), bef);
                     // boundary cases
                     if ceil.0.0.is_zero() {
                         prop_assert_eq!(ceil_aaf.rem(), bef);

@@ -1,6 +1,6 @@
 /// A token amount after the levying of fees and the amount of fees levied.
 ///
-/// invariant: `self.rem() + self.fee() = self.before_fee()`.
+/// invariant: `self.rem() + self.fee() = self.bef_fee()`.
 ///
 /// Fields are private to ensure invariant is never violated.
 ///
@@ -31,6 +31,13 @@ impl AftFee {
     pub const fn bef_fee(&self) -> u64 {
         self.rem + self.fee
     }
+
+    /// # Safety
+    /// - `rem + fee` must not overflow
+    #[inline]
+    pub const unsafe fn new_unchecked(rem: u64, fee: u64) -> Self {
+        Self { rem, fee }
+    }
 }
 
 /// A token amount before the levying of fees
@@ -44,7 +51,7 @@ impl BefFee {
     ///    from the encapsulated token amount
     ///
     /// # Returns
-    /// The constructed [`AftFee`] or `None` if `fee_charged > self.0`
+    /// The constructed [`AftFee`] or `None` if `fee > self.0`
     #[inline]
     pub const fn with_fee(self, fee: u64) -> Option<AftFee> {
         let rem = match self.0.checked_sub(fee) {
