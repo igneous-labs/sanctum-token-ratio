@@ -101,6 +101,26 @@ macro_rules! impl_ratio {
                 !self.is_zero() && self.n as Max == self.d as Max
             }
 
+            /// Fraction comparison
+            ///
+            /// ```rust
+            /// use core::cmp::Ordering;
+            /// use sanctum_u64_ratio::Ratio;
+            ///
+            #[doc = concat!("type R = Ratio<", stringify!($N), ", ", stringify!($D), ">;")]
+            ///
+            /// // 1/2 == 4/8 even though n and d are different
+            /// assert_eq!(
+            ///     R::new(1, 2).const_cmp(&R::new(4, 8)),
+            ///     Ordering::Equal,
+            /// );
+            ///
+            /// // 1/3 > 1/4
+            /// assert_eq!(
+            ///     R::new(1, 3).const_cmp(&R::new(1, 4)),
+            ///     Ordering::Greater,
+            /// )
+            /// ```
             #[inline]
             pub const fn const_cmp(&self, other: &Self) -> Ordering {
                 type Ext = <Ratio<$N, $D> as ArithTypes>::Ext;
@@ -154,6 +174,7 @@ macro_rules! impl_ratio {
             }
         }
 
+        /// Uses [`Self::const_cmp`], see its docs for more info
         impl PartialEq for Ratio<$N, $D> {
             #[inline]
             fn eq(&self, rhs: &Self) -> bool {
@@ -161,8 +182,10 @@ macro_rules! impl_ratio {
             }
         }
 
+        /// Uses [`Self::const_cmp`], see its docs for more info
         impl Eq for Ratio<$N, $D> {}
 
+        /// Uses [`Self::const_cmp`], see its docs for more info
         impl PartialOrd for Ratio<$N, $D> {
             #[inline]
             fn partial_cmp(&self, rhs: &Self) -> Option<Ordering> {
@@ -170,6 +193,7 @@ macro_rules! impl_ratio {
             }
         }
 
+        /// Uses [`Self::const_cmp`], see its docs for more info
         impl Ord for Ratio<$N, $D> {
             #[inline]
             fn cmp(&self, rhs: &Self) -> Ordering {
@@ -179,8 +203,9 @@ macro_rules! impl_ratio {
 
         /// To ensure that the
         /// `k1 == k2 -> hash(k1) == hash(k2)`
-        /// invariant is not violated, we need to hash the fraction's lowest form
-        /// `<https://doc.rust-lang.org/std/hash/trait.Hash.html#hash-and-eq>`
+        /// invariant is not violated, we need to hash the fraction's lowest form.
+        ///
+        /// More info in [rust std docs](https://doc.rust-lang.org/std/hash/trait.Hash.html#hash-and-eq)
         impl Hash for Ratio<$N, $D> {
             #[inline]
             fn hash<H>(&self, state: &mut H)
@@ -226,6 +251,7 @@ impl_ratio!(u64, u64, [gcd_u64, u64, u64, u128]);
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
+    use std::hash::DefaultHasher;
 
     use super::*;
 
@@ -273,10 +299,10 @@ mod tests {
         ($N: ty, $D:ty, $lowest_form:ident) => {
             proptest! {
                 #[test]
-                fn $lowest_form(a: $N, b: $D, c: $N, d: $D) {
+                fn $lowest_form(n1: $N, d1: $D, n2: $N, d2: $D) {
                     type R = Ratio<$N, $D>;
 
-                    let [(r1, l1), (r2, l2)] = [(a, b), (c, d)]
+                    let [(r1, l1), (r2, l2)] = [(n1, d1), (n2, d2)]
                         .map(|(n, d)| {
                             let r = R::new(n, d);
                             (r, r.lowest_form())
@@ -328,6 +354,28 @@ mod tests {
         };
     }
 
+    macro_rules! eq_implies_hash_eq {
+        ($N: ty, $D:ty, $eqhash:ident) => {
+            proptest! {
+                #[test]
+                fn $eqhash(n1: $N, d1: $D, n2: $N, d2: $D) {
+                    type R = Ratio<$N, $D>;
+
+                    let [r1, r2] = [(n1, d1), (n2, d2)]
+                        .map(|(n, d)| R::new(n, d));
+                    if r1 == r2 {
+                        let [mut h1, mut h2] = core::array::from_fn(|_| DefaultHasher::new());
+                        for (r, h) in [(r1, &mut h1), (r2, &mut h2)] {
+                            r.hash(h);
+                        }
+                        let [h1, h2] = [h1, h2].map(|h| h.finish());
+                        prop_assert_eq!(h1, h2);
+                    }
+                }
+            }
+        };
+    }
+
     ord!(u8, ord_u8);
     ord!(u16, ord_u16);
     ord!(u32, ord_u32);
@@ -372,4 +420,24 @@ mod tests {
     lowest_form_ord_iff_ord!(u64, u16, lowest_form_iff_u64_u16);
     lowest_form_ord_iff_ord!(u64, u32, lowest_form_iff_u64_u32);
     lowest_form_ord_iff_ord!(u64, u64, lowest_form_iff_u64_u64);
+
+    eq_implies_hash_eq!(u8, u8, eq_hash_eq_u8_u8);
+    eq_implies_hash_eq!(u8, u16, eq_hash_eq_u8_u16);
+    eq_implies_hash_eq!(u8, u32, eq_hash_eq_u8_u32);
+    eq_implies_hash_eq!(u8, u64, eq_hash_eq_u8_u64);
+
+    eq_implies_hash_eq!(u16, u8, eq_hash_eq_u16_u8);
+    eq_implies_hash_eq!(u16, u16, eq_hash_eq_u16_u16);
+    eq_implies_hash_eq!(u16, u32, eq_hash_eq_u16_u32);
+    eq_implies_hash_eq!(u16, u64, eq_hash_eq_u16_u64);
+
+    eq_implies_hash_eq!(u32, u8, eq_hash_eq_u32_u8);
+    eq_implies_hash_eq!(u32, u16, eq_hash_eq_u32_u16);
+    eq_implies_hash_eq!(u32, u32, eq_hash_eq_u32_u32);
+    eq_implies_hash_eq!(u32, u64, eq_hash_eq_u32_u64);
+
+    eq_implies_hash_eq!(u64, u8, eq_hash_eq_u64_u8);
+    eq_implies_hash_eq!(u64, u16, eq_hash_eq_u64_u16);
+    eq_implies_hash_eq!(u64, u32, eq_hash_eq_u64_u32);
+    eq_implies_hash_eq!(u64, u64, eq_hash_eq_u64_u64);
 }
