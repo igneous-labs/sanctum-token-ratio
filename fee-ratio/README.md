@@ -52,15 +52,16 @@ assert_eq!(aft_fee.rem(), 900_000_000);
 assert_eq!(aft_fee.fee(), 100_000_001);
 
 let range = fee.reverse_from_rem(aft_fee.rem()).unwrap();
+assert_eq!(range, 1_000_000_000..=1_000_000_001);
 
 // min results in a different fee, but max doesnt
 
-let min = fee.apply(*range.start()).unwrap();
-assert_eq!(min.rem(), aft_fee.rem());
+let min = fee.apply(1_000_000_000).unwrap();
+assert_eq!(min.rem(), 900_000_000);
 assert_eq!(min.fee(), 100_000_000);
 
-let max = fee.apply(*range.end()).unwrap();
-assert_eq!(max.rem(), aft_fee.rem());
+let max = fee.apply(1_000_000_001).unwrap();
+assert_eq!(max.rem(), 900_000_000);
 assert_eq!(max.fee(), 100_000_001);
 ```
 
@@ -80,14 +81,15 @@ assert_eq!(aft_fee.rem(), 900_000_001);
 assert_eq!(aft_fee.fee(), 100_000_000);
 
 let range = fee.reverse_from_fee(aft_fee.fee()).unwrap();
+assert_eq!(range, 1_000_000_000..=1_000_000_009);
 
 // both min and max result in a different `rem()`
 
-let min = fee.apply(*range.start()).unwrap();
+let min = fee.apply(1_000_000_000).unwrap();
 assert_eq!(min.rem(), 900_000_000);
-assert_eq!(min.fee(), aft_fee.fee());
+assert_eq!(min.fee(), 100_000_000);
 
-let max = fee.apply(*range.end()).unwrap();
+let max = fee.apply(1_000_000_009).unwrap();
 assert_eq!(max.rem(), 900_000_009);
-assert_eq!(max.fee(), aft_fee.fee());
+assert_eq!(max.fee(), 100_000_000);
 ```
