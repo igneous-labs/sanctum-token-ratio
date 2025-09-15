@@ -66,12 +66,18 @@ impl<D> Borrow<D> for Fee<D> {
 macro_rules! impl_fee_ratio {
     ($N:ty, $D:ty) => {
         impl Fee<Ceil<Ratio<$N, $D>>> {
+            pub const ZERO: Self = Self(Ceil(Ratio::new(0, 1)));
+            pub const ONE: Self = Self(Ceil(Ratio::new(1, 1)));
+
             /// # Returns
-            /// `None` if `fee_ratio` is not valid (`>1.0`)
+            /// - `None` if `fee_ratio` is not valid (`>1.0`)
+            /// - `None` if `fee_ratio`'s `denominator = 0`. This is to avoid 2 distinct states
+            ///   that are both treated as 0-fees since [`Ratio`] also treats 0 denominator as 0.
+            ///   To create a 0-fee struct, pass in a `fee_ratio` with numerator = 0.
             #[inline]
             pub const fn new(fee_ratio: Ratio<$N, $D>) -> Option<Self> {
-                if !fee_ratio.is_zero()
-                    && fee_ratio.n as <Ratio<$N, $D> as ArithTypes>::Max
+                if fee_ratio.d == 0
+                    || fee_ratio.n as <Ratio<$N, $D> as ArithTypes>::Max
                         > fee_ratio.d as <Ratio<$N, $D> as ArithTypes>::Max
                 {
                     None
@@ -155,12 +161,18 @@ macro_rules! impl_fee_ratio {
         }
 
         impl Fee<Floor<Ratio<$N, $D>>> {
+            pub const ZERO: Self = Self(Floor(Ratio::new(0, 1)));
+            pub const ONE: Self = Self(Floor(Ratio::new(1, 1)));
+
             /// # Returns
-            /// `None` if `fee_ratio` is not valid (`>1.0`)
+            /// - `None` if `fee_ratio` is not valid (`>1.0`)
+            /// - `None` if `fee_ratio`'s `denominator = 0`. This is to avoid 2 distinct states
+            ///   that are both treated as 0-fees since [`Ratio`] also treats 0 denominator as 0.
+            ///   To create a 0-fee struct, pass in a `fee_ratio` with numerator = 0.
             #[inline]
             pub const fn new(fee_ratio: Ratio<$N, $D>) -> Option<Self> {
-                if !fee_ratio.is_zero()
-                    && fee_ratio.n as <Ratio<$N, $D> as ArithTypes>::Max
+                if fee_ratio.d == 0
+                    || fee_ratio.n as <Ratio<$N, $D> as ArithTypes>::Max
                         > fee_ratio.d as <Ratio<$N, $D> as ArithTypes>::Max
                 {
                     None
@@ -274,7 +286,7 @@ mod tests {
             impl Fee<Floor<Ratio<$N, $D>>> {
                 prop_compose! {
                     fn prop_floor_ceil()
-                        (d in any::<$D>())
+                        (d in  1..=<$D>::MAX)
                         (
                             n in 0..=(
                                 if d as <Ratio<$N, $D> as ArithTypes>::Max
@@ -416,6 +428,7 @@ mod tests {
 
 
                     // COMBINED TESTS
+
                     // floor's rem should be larger than ceil's by at most 1
                     prop_assert!(
                         floor_aaf.rem() - ceil_aaf.rem() <= 1
@@ -424,6 +437,17 @@ mod tests {
                     prop_assert!(
                         ceil_aaf.fee() - floor_aaf.fee() <= 1
                     );
+
+                    // zero denom should be rejected
+                    let n = floor.0.0.n;
+                    prop_assert!(Fee::<Floor::<Ratio<$N, $D>>>::new(Ratio::new(n, 0)).is_none());
+                    prop_assert!(Fee::<Ceil::<Ratio<$N, $D>>>::new(Ratio::new(n, 0)).is_none());
+
+                    // check associated consts
+                    prop_assert!(Fee::<Floor::<Ratio<$N, $D>>>::ZERO.0.0.is_zero());
+                    prop_assert!(Fee::<Floor::<Ratio<$N, $D>>>::ONE.0.0.is_one());
+                    prop_assert!(Fee::<Ceil::<Ratio<$N, $D>>>::ZERO.0.0.is_zero());
+                    prop_assert!(Fee::<Ceil::<Ratio<$N, $D>>>::ONE.0.0.is_one());
                 }
             }
         };

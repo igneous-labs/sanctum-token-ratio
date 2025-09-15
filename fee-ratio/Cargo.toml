@@ -1,10 +1,10 @@
 [package]
 name = "sanctum-fee-ratio"
+description = "Abstractions over fees applied as ratios to u64 quantities."
+version = "1.0.0"
 edition.workspace = true
-version.workspace = true
 license-file.workspace = true
 repository.workspace = true
-description = "Abstractions over fees applied as ratios to u64 quantities."
 
 [dependencies]
 sanctum-u64-ratio = { workspace = true }
