@@ -72,6 +72,7 @@ macro_rules! impl_ceil_div {
             /// - `0..=0` if `amt_after_apply == 0` and ratio is nonzero
             /// - `None` if `self.0.is_zero()` but `amt_after_apply != 0`
             /// - `None` if `min > u64::MAX`
+            /// - `None` if min > max. This can happen if N > D. e.g. `Ceil(2/1).reverse(any_odd_number)`
             ///
             /// # Derivation
             ///
@@ -140,7 +141,11 @@ macro_rules! impl_ceil_div {
                     Some(r) => r,
                 };
 
-                Some(min..=max)
+                if min > max {
+                    None
+                } else {
+                    Some(min..=max)
+                }
             }
         }
     };
@@ -232,6 +237,7 @@ mod tests {
                 ) {
                     // gte one round trip
                     let app = gte.apply(amt).unwrap();
+                    // any value derived from apply must have a valid reverse
                     let rt = gte.reverse(app).unwrap();
                     prop_assert!(rt.start() <= rt.end(), "gte one minmax {:?}", rt);
                     prop_assert!(
