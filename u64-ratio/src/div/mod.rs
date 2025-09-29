@@ -48,14 +48,38 @@ mod tests {
                         (aaf, lte_ceil, lte_floor),
                         (any_u64, gte_ceil, gte_floor),
                     ] {
-                        let rev_ceil = ceil.reverse(aaf).unwrap();
-                        let rev_floor = floor.reverse(aaf).unwrap();
-                        prop_assert!(
-                            rev_ceil.start() <= rev_floor.start() &&
-                            rev_ceil.end() <= rev_floor.end(),
-                            "rev_ceil > rev_floor {}. {} {:?} | {} {:?}",
-                            amt, ceil, rev_ceil, floor, rev_floor,
-                        );
+                        match (ceil.reverse(aaf), floor.reverse(aaf)) {
+                            (Some(rev_ceil), Some(rev_floor)) => {
+                                prop_assert!(
+                                    rev_ceil.start() <= rev_floor.start() &&
+                                    rev_ceil.end() <= rev_floor.end(),
+                                    "rev_ceil > rev_floor {aaf}. {ceil} {rev_ceil:?} | {floor} {rev_floor:?}",
+                                );
+                            }
+                            (None, None) => (),
+                            (None, Some(f)) => {
+                                // assert that ceil is indeed unattainable:
+                                // - f should be single value
+                                // - ceil.apply(f - 1) < aaf
+                                // - ceil.apply(f) != aaf
+                                // - ceil.apply(f + 1) > aaf
+                                assert!(f.start() == f.end());
+                                assert!(ceil.apply(f.start() - 1).unwrap() < aaf);
+                                assert!(ceil.apply(*f.start()).unwrap() != aaf);
+                                assert!(ceil.apply(f.start() + 1).unwrap() > aaf);
+                            }
+                            (Some(c), None) => {
+                                // assert that floor is indeed unattainable:
+                                // - c should be single value
+                                // - floor.apply(c - 1) < aaf
+                                // - floor.apply(c) != aaf
+                                // - floor.apply(c + 1) > aaf
+                                assert!(c.start() == c.end());
+                                assert!(floor.apply(c.start() - 1).unwrap() < aaf);
+                                assert!(floor.apply(*c.start()).unwrap() != aaf);
+                                assert!(floor.apply(c.start() + 1).unwrap() > aaf);
+                            }
+                        }
                     }
                 }
             }
