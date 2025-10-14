@@ -286,7 +286,7 @@ mod tests {
             impl Fee<Floor<Ratio<$N, $D>>> {
                 prop_compose! {
                     fn prop_floor_ceil()
-                        (d in  1..=<$D>::MAX)
+                        (d in 1..=<$D>::MAX)
                         (
                             n in 0..=(
                                 if d as <Ratio<$N, $D> as ArithTypes>::Max
@@ -305,12 +305,70 @@ mod tests {
                             )
                         }
                 }
+
+                fn proptest_inputs() -> impl Strategy<
+                    Value = (
+                        Self,
+                        Fee<Ceil<Ratio<$N, $D>>>,
+                        u64,
+                        u64,
+                        u64,
+                        u64,
+                        u64,
+                        u64,
+                        u64,
+                        u64,
+                    ),
+                > {
+                    Self::prop_floor_ceil().prop_flat_map(|(f, c)| {
+                        let Self(Floor(Ratio { n, d })) = f;
+                        // determine max amounts that will not overflow
+                        // when input into the respective reverse_ fns
+                        //
+                        // See prop_ratio_lte_one_and_rev_overflow_max_limit() fns
+                        // in sanctum-u64-ratio
+                        let n = n as u128;
+                        let d = d as u128;
+                        let om = d - n;
+                        let floor_fee_max = u64::try_from((u64::MAX as u128 * n) / d).unwrap();
+                        let floor_rem_max = u64::try_from((u64::MAX as u128 * om) / d)
+                            .unwrap()
+                            .saturating_add(1);
+                        let ceil_fee_max = u64::try_from((u64::MAX as u128 * n) / d)
+                            .unwrap()
+                            .saturating_add(1);
+                        let ceil_rem_max = u64::try_from((u64::MAX as u128 * om) / d).unwrap();
+                        (
+                            Just(f),
+                            Just(c),
+                            Just(floor_fee_max),
+                            0..=floor_fee_max,
+                            Just(floor_rem_max),
+                            0..=floor_rem_max,
+                            Just(ceil_fee_max),
+                            0..=ceil_fee_max,
+                            Just(ceil_rem_max),
+                            0..=ceil_rem_max,
+                        )
+                    })
+                }
             }
 
             proptest! {
                 #[test]
                 fn $test(
-                    (floor, ceil) in Fee::<Floor::<Ratio<$N, $D>>>::prop_floor_ceil(),
+                    (
+                        floor,
+                        ceil,
+                        floor_fee_max,
+                        floor_fee,
+                        floor_rem_max,
+                        floor_rem,
+                        ceil_fee_max,
+                        ceil_fee,
+                        ceil_rem_max,
+                        ceil_rem,
+                    ) in Fee::<Floor::<Ratio<$N, $D>>>::proptest_inputs(),
                     bef: u64,
                 ) {
                     // FLOOR TESTS
@@ -368,7 +426,21 @@ mod tests {
                         let rt = floor.apply(*floor_rev_fee.end() + 1).unwrap();
                         prop_assert!(floor_aaf.fee() != rt.fee());
                     }
-
+                    // check correct floor_fee_max, +1 should overflow
+                    if floor_fee_max < u64::MAX {
+                        prop_assert!(floor.reverse_from_fee(floor_fee_max + 1).is_none());
+                    }
+                    // reverse_from_fee should be a total function, works for any non-overflow input
+                    prop_assert!(floor.reverse_from_fee(floor_fee).is_some());
+                    // check correct floor_rem_max, +1 should overflow
+                    if floor_rem_max < u64::MAX {
+                        prop_assert!(floor.reverse_from_rem(floor_rem_max + 1).is_none());
+                    }
+                    // reverse_from_rem should be a total function, works for any non-overflow input
+                    // as long as fee is not one
+                    if !floor.0.0.is_one() {
+                        prop_assert!(floor.reverse_from_rem(floor_rem).is_some());
+                    }
 
                     // CEIL TESTS
                     let ceil_aaf = ceil.apply(bef).unwrap();
@@ -425,7 +497,21 @@ mod tests {
                         let rt = ceil.apply(*ceil_rev_fee.end() + 1).unwrap();
                         prop_assert!(ceil_aaf.fee() != rt.fee());
                     }
-
+                    // check correct ceil_fee_max, +1 should overflow
+                    if ceil_fee_max < u64::MAX {
+                        prop_assert!(ceil.reverse_from_fee(ceil_fee_max + 1).is_none());
+                    }
+                    // reverse_from_fee should be a total function, works for any non-overflow input
+                    // as long as fee is not zero
+                    if !ceil.0.0.is_zero() {
+                        prop_assert!(ceil.reverse_from_fee(ceil_fee).is_some());
+                    }
+                    // check correct ceil_rem_max, +1 should overflow
+                    if ceil_rem_max < u64::MAX {
+                        prop_assert!(ceil.reverse_from_rem(ceil_rem_max + 1).is_none());
+                    }
+                    // reverse_from_rem should be a total function, works for any non-overflow input
+                    prop_assert!(ceil.reverse_from_rem(ceil_rem).is_some());
 
                     // COMBINED TESTS
 

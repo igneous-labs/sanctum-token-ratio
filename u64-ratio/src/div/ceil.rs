@@ -72,7 +72,9 @@ macro_rules! impl_ceil_div {
             /// - `0..=0` if `amt_after_apply == 0` and ratio is nonzero
             /// - `None` if `self.0.is_zero()` but `amt_after_apply != 0`
             /// - `None` if `min > u64::MAX`
-            /// - `None` if min > max. This can happen if N > D. e.g. `Ceil(2/1).reverse(any_odd_number)`
+            /// - `None` if min > max. This can happen if N > D. e.g. `Ceil(2/1).reverse(any_odd_number)`.
+            ///   NOTE: this makes `reverse` NOT a total function: excluding overflow, there are many values
+            ///   of `u64` where this fn would return `None`
             ///
             /// # Derivation
             ///
@@ -212,9 +214,10 @@ mod tests {
                             // max limit is exceeded when min of range exceeds u64::MAX
                             //
                             // let y be max limit
+                            // LHS (min):
                             // (dy-d) / n <= u64::MAX
                             // y <= 1 + u64::MAX * n / d
-                            let max_limit = (u64::MAX as u128 * ratio.n as u128).div_ceil(ratio.d as u128);
+                            let max_limit = (u64::MAX as u128 * ratio.n as u128) / ratio.d as u128;
                             (u64::try_from(max_limit).unwrap().saturating_add(1), Self(ratio))
                     }
                 }
@@ -222,8 +225,9 @@ mod tests {
                 prop_compose! {
                     pub(crate) fn prop_ratio_lte_one_rev_no_overflow()
                         ((maxlimit, ratio) in Self::prop_ratio_lte_one_and_rev_overflow_max_limit())
-                        (amt in 0..=maxlimit, maxlimit in Just(maxlimit), ratio in Just(ratio)) -> (u64, u64, Self) {
-                            (amt, maxlimit, ratio)
+                        // aaa = amount_after_apply
+                        (aaa in 0..=maxlimit, maxlimit in Just(maxlimit), ratio in Just(ratio)) -> (u64, u64, Self) {
+                            (aaa, maxlimit, ratio)
                         }
                 }
             }
@@ -232,7 +236,7 @@ mod tests {
                 #[test]
                 fn $nonzero_tests(
                     (amt, amt_max, gte) in Ceil::<Ratio<$N, $D>>::prop_ratio_gte_one_amt_no_overflow(),
-                    (_aaf, aaf_max, lte) in Ceil::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
+                    (aaa, aaa_max, lte) in Ceil::<Ratio<$N, $D>>::prop_ratio_lte_one_rev_no_overflow(),
                     any_u64: u64,
                 ) {
                     // gte one round trip
@@ -306,13 +310,17 @@ mod tests {
                     }
 
                     // lte overflow
-                    if aaf_max < u64::MAX {
-                        prop_assert!(lte.reverse(aaf_max + 1).is_none());
+                    if aaa_max < u64::MAX {
+                        prop_assert!(lte.reverse(aaa_max + 1).is_none());
                     }
 
                     // lte reverse zero is zero
                     let rev_zero = lte.reverse(0).unwrap();
                     prop_assert_eq!(rev_zero.clone(), 0..=0, "lte rev zero {:?}", rev_zero);
+
+                    // lte reverse is a total function
+                    // so reverse should work on any amount
+                    lte.reverse(aaa).unwrap();
                 }
             }
 

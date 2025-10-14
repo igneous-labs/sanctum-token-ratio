@@ -28,17 +28,17 @@ pub struct Ratio<N, D> {
 
 macro_rules! impl_gcd {
     ($f:ident, $T:ty) => {
-        // holy shit you can have recursive const fns now
         /// Takes 1 fewer iteration if a > b compared to b > a.
         ///
         /// Never returns 0 unless both args are 0
         #[inline]
-        const fn $f(a: $T, b: $T) -> $T {
-            if b > 0 {
-                $f(b, a % b)
-            } else {
-                a
+        const fn $f(mut a: $T, mut b: $T) -> $T {
+            while b > 0 {
+                let r = a % b;
+                a = b;
+                b = r;
             }
+            a
         }
     };
 }
