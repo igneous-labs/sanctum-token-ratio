@@ -8,7 +8,7 @@ members = [
 
 [workspace.package]
 edition = "2021"
-version = "1.0.0"
+version = "2.1.0"
 license-file = "LICENSE"
 repository = "https://github.com/igneous-labs/sanctum-token-ratio"
 
@@ -16,4 +16,4 @@ repository = "https://github.com/igneous-labs/sanctum-token-ratio"
 proptest = { version = "^1", default-features = false }
 
 # workspace members
-sanctum-u64-ratio = { version = "^1", path = "./u64-ratio" }
+sanctum-u64-ratio = { version = "^2", path = "./u64-ratio" }
