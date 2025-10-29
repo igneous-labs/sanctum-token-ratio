@@ -97,6 +97,25 @@ macro_rules! impl_ceil_div {
             /// ```
             #[inline]
             pub const fn reverse(&self, amt_after_apply: u64) -> Option<RangeInclusive<u64>> {
+                match self.reverse_est(amt_after_apply) {
+                    None => None,
+                    Some(r) => {
+                        if *r.start() > *r.end() {
+                            None
+                        } else {
+                            Some(r)
+                        }
+                    }
+                }
+            }
+
+            /// [`Self::reverse`], but returns an invalid/empty range
+            /// (e.g. `3..=2`) for the last special-case when `min > max`.
+            ///
+            /// While not numerically correct, this may be necessary to obtain
+            /// closest estimates
+            #[inline]
+            pub const fn reverse_est(&self, amt_after_apply: u64) -> Option<RangeInclusive<u64>> {
                 if self.0.is_zero() {
                     return if amt_after_apply == 0 {
                         Some(0..=u64::MAX)
@@ -142,12 +161,7 @@ macro_rules! impl_ceil_div {
                     None => u64::MAX,
                     Some(r) => r,
                 };
-
-                if min > max {
-                    None
-                } else {
-                    Some(min..=max)
-                }
+                Some(min..=max)
             }
         }
     };
