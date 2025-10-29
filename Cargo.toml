@@ -8,7 +8,7 @@ members = [
 
 [workspace.package]
 edition = "2021"
-version = "2.1.0"
+version = "2.2.0"
 license-file = "LICENSE"
 repository = "https://github.com/igneous-labs/sanctum-token-ratio"
 
